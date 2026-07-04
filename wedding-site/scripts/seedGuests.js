@@ -39,10 +39,15 @@ async function seedGuests() {
       ...new Set(family.members.map((name) => name.trim())),
     ];
 
+    const searchNames = uniqueMembers.map((name) => normalizeId(name));
+    const membersPreview = uniqueMembers.slice(0, 3);
+
     await familyRef.set(
       {
         surname: family.surname,
         familyNameKey,
+        searchNames,
+        membersPreview,
         contactEmail: "",
         contactPhone: "",
         rsvpStatus: "pending",

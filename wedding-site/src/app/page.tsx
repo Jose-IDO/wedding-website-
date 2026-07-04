@@ -64,6 +64,13 @@ type RSVPFamily = {
 
 type RSVPStep = "surname" | "loading" | "family" | "success";
 
+type SuggestedFamily = {
+  id: string;
+  surname: string;
+  guestGroup: GuestGroup;
+  membersPreview: string[];
+};
+
 const PHOTO_FILENAMES = [
   "WhatsApp Image 2026-06-20 at 20.15.351.JPG",
   "WhatsApp Image 2026-06-07 at 09.10.22.jpeg",
@@ -923,6 +930,155 @@ function LocationMapsSection() {
   );
 }
 
+
+function RegistrySection() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.65 }}
+      className="mt-8 w-full rounded-[2rem] border border-[#c9a76b]/35 bg-[#fff8ed]/85 p-6 text-center shadow-[0_24px_80px_rgba(36,59,90,0.1)] backdrop-blur sm:p-8"
+    >
+      <p className="mb-3 text-xs uppercase tracking-[0.42em] text-[#9c8261]">
+        Wedding Registry
+      </p>
+
+      <h2
+        className={`${playfair.className} mb-4 text-3xl font-black text-[#243b5a] sm:text-5xl`}
+      >
+        Your Presence Is Our Greatest Gift
+      </h2>
+
+      <p className="mx-auto mb-8 max-w-2xl text-sm leading-7 text-[#4d5f78] sm:text-base">
+        Celebrating this special day with the people we love is more than we
+        could ever ask for. Should you wish to bless us with a gift, we would
+        be deeply grateful for a contribution towards our future together.
+        Your generosity, prayers, and support mean the world to us as we begin
+        this new chapter as husband and wife.
+      </p>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-[1.6rem] border border-[#c9a76b]/35 bg-[#fff8ed]/80 p-5 shadow-[0_14px_42px_rgba(36,59,90,0.08)]">
+          <h3
+            className={`${playfair.className} mb-4 text-2xl font-black text-[#243b5a]`}
+          >
+            TymeBank / GoTyme
+          </h3>
+
+          <div className="space-y-2 text-sm text-[#4d5f78]">
+            <p>
+              <span className="font-bold text-[#243b5a]">
+                Account Holder:
+              </span>{" "}
+              Funso Joseph Idowu
+            </p>
+
+            <p>
+              <span className="font-bold text-[#243b5a]">Bank Name:</span>{" "}
+              TymeBank / GoTyme
+            </p>
+
+            <p>
+              <span className="font-bold text-[#243b5a]">Branch Code:</span>{" "}
+              678910
+            </p>
+
+            <p>
+              <span className="font-bold text-[#243b5a]">
+                Account Number:
+              </span>{" "}
+              51052587164
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-[1.6rem] border border-[#c9a76b]/35 bg-[#fff8ed]/80 p-5 shadow-[0_14px_42px_rgba(36,59,90,0.08)]">
+          <h3
+            className={`${playfair.className} mb-4 text-2xl font-black text-[#243b5a]`}
+          >
+            Capitec
+          </h3>
+
+          <div className="space-y-2 text-sm text-[#4d5f78]">
+            <p>
+              <span className="font-bold text-[#243b5a]">
+                Account Holder:
+              </span>{" "}
+              Funso Joseph Idowu
+            </p>
+
+            <p>
+              <span className="font-bold text-[#243b5a]">Bank Name:</span>{" "}
+              Capitec Bank
+            </p>
+
+            <p>
+              <span className="font-bold text-[#243b5a]">
+                Account Number:
+              </span>{" "}
+              2529873840
+            </p>
+
+            <p>
+              <span className="font-bold text-[#243b5a]">Branch Code:</span>{" "}
+              470010
+            </p>
+
+            <p>
+              <span className="font-bold text-[#243b5a]">Swift Code:</span>{" "}
+              CABLZAJJ
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-[1.6rem] border border-[#c9a76b]/35 bg-[#fff8ed]/80 p-5 shadow-[0_14px_42px_rgba(36,59,90,0.08)]">
+        <h3
+          className={`${playfair.className} mb-4 text-2xl font-black text-[#243b5a]`}
+        >
+          PayPal
+        </h3>
+
+        <p className="mx-auto mb-4 max-w-xl text-sm leading-6 text-[#4d5f78]">
+          For guests celebrating with us from abroad, PayPal may be the most
+          convenient way to send a gift. Contributions can be made using
+          either the email address or mobile number below.
+        </p>
+
+        <div className="space-y-2 text-sm text-[#4d5f78]">
+          <p>
+            <span className="font-bold text-[#243b5a]">PayPal Email:</span>{" "}
+            joseph.f.idowu@gmail.com
+          </p>
+
+          <p>
+            <span className="font-bold text-[#243b5a]">PayPal Mobile:</span>{" "}
+            +27 74 084 1686
+          </p>
+        </div>
+      </div>
+
+      <div className="mx-auto mt-5 max-w-md rounded-full border border-[#c9a76b]/45 bg-[#fff8ed]/90 px-5 py-3 text-center shadow-[0_14px_42px_rgba(36,59,90,0.08)]">
+        <p className="text-xs uppercase tracking-[0.28em] text-[#9c8261]">
+          PayShap
+        </p>
+
+        <p
+          className={`${playfair.className} text-xl font-black text-[#243b5a]`}
+        >
+          0740841686
+        </p>
+      </div>
+
+      <p className="mx-auto mt-8 max-w-xl text-center text-sm italic text-[#6f7f96]">
+        Thank you for celebrating with us and for being part of our story.
+        Your love, support, and well wishes are the greatest gifts we could
+        receive.
+      </p>
+    </motion.div>
+  );
+}
+
 function OrderOfDaySection() {
   const events = [
     {
@@ -1034,6 +1190,8 @@ function OrderOfDaySection() {
             and WhatsApp.
           </p>
         </motion.div>
+
+        <RegistrySection />
       </div>
     </RootsWrap>
   );
@@ -1683,6 +1841,7 @@ function RSVPModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     useState<GuestGroup>("bride-groom");
   const [family, setFamily] = useState<RSVPFamily | null>(null);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [suggestions, setSuggestions] = useState<SuggestedFamily[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
 
   const attendingWeddingCount = familyMembers.filter(
@@ -1701,6 +1860,7 @@ function RSVPModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     setSubmittedSurname("");
     setFamily(null);
     setFamilyMembers([]);
+    setSuggestions([]);
     setErrorMessage("");
   }
 
@@ -1714,14 +1874,32 @@ function RSVPModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     }
   }, [open]);
 
-async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
-  event.preventDefault();
+function applyFamilyResponse(data: any) {
+    setFamily(data.family);
+    setSuggestions([]);
 
-  const cleanSurname = surname.trim();
+    setFamilyMembers(
+      data.members.map((member: any) => ({
+        id: member.id,
+        fullName: member.fullName,
+        attendingWedding: Boolean(member.attendingWedding),
+        attendingChurch: Boolean(member.attendingChurch),
+        churchEligible: member.churchEligible !== false,
+        contactEmail: member.contactEmail ?? "",
+        contactPhone: member.contactPhone ?? "",
+      }))
+    );
+
+    setStep("family");
+  }
+
+async function searchInvitation(searchValue: string) {
+  const cleanSurname = searchValue.trim();
 
   if (!cleanSurname) return;
 
   setSubmittedSurname(cleanSurname);
+  setSuggestions([]);
   setErrorMessage("");
   setStep("loading");
 
@@ -1743,33 +1921,34 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
     const data = await response.json();
 
     if (!response.ok) {
-      setErrorMessage(
-        data.error ?? "Family not found. Please check the surname."
-      );
+      if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+        setSuggestions(data.suggestions);
+        setErrorMessage(
+          data.error ?? "We could not find an exact match. Did you mean one of these?"
+        );
+      } else {
+        setSuggestions([]);
+        setErrorMessage(
+          data.error ?? "Family not found. Please check the spelling."
+        );
+      }
+
       setStep("surname");
       return;
     }
 
-    setFamily(data.family);
-
-    setFamilyMembers(
-      data.members.map((member: any) => ({
-        id: member.id,
-        fullName: member.fullName,
-        attendingWedding: Boolean(member.attendingWedding),
-        attendingChurch: Boolean(member.attendingChurch),
-        churchEligible: member.churchEligible !== false,
-        contactEmail: member.contactEmail ?? "",
-        contactPhone: member.contactPhone ?? "",
-      }))
-    );
-
-    setStep("family");
+    applyFamilyResponse(data);
   } catch (error) {
     console.error(error);
-    setErrorMessage("Could not load your family. Please try again.");
+    setSuggestions([]);
+    setErrorMessage("Could not load your invitation. Please try again.");
     setStep("surname");
   }
+}
+
+async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  await searchInvitation(surname);
 }
 
   function updateMemberContact(
@@ -1949,6 +2128,35 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
               <p className="mx-auto mb-4 max-w-sm text-sm font-bold text-[#b91c1c]">
                 {errorMessage}
               </p>
+            )}
+
+            {suggestions.length > 0 && (
+              <div className="mx-auto mb-5 max-w-md space-y-2 rounded-[1.4rem] border border-[#c9a76b]/35 bg-[#fff8ed]/75 p-4 text-left shadow-[0_16px_50px_rgba(36,59,90,0.08)]">
+                <p className="text-center text-[0.65rem] font-black uppercase tracking-[0.26em] text-[#9c8261]">
+                  Did you mean?
+                </p>
+
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion.id}
+                    type="button"
+                    onClick={() => searchInvitation(suggestion.surname)}
+                    className="w-full rounded-2xl border border-[#c9a76b]/30 bg-[#f8efe2]/80 px-4 py-3 text-left transition hover:border-[#b88a3d] hover:bg-[#fff8ed]"
+                  >
+                    <span
+                      className={`${playfair.className} block text-base font-black text-[#243b5a]`}
+                    >
+                      {suggestion.surname}
+                    </span>
+
+                    {suggestion.membersPreview.length > 0 && (
+                      <span className="mt-1 block text-xs leading-5 text-[#6f7f96]">
+                        {suggestion.membersPreview.join(", ")}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
 
             <motion.button
