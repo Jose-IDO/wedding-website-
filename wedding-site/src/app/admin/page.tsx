@@ -17,6 +17,9 @@ type AdminMember = {
   attendingWedding: boolean;
   attendingChurch: boolean;
   churchEligible: boolean;
+  unableToAttend?: boolean;
+  contactEmail: string;
+  contactPhone: string;
   rsvpStatus: string;
   submittedAt: string | null;
 };
@@ -42,13 +45,14 @@ type DashboardData = {
     pendingFamilies: number;
     totalInvited: number;
     receptionAttending: number;
-    churchAttending: number;
-    brideGroomChurch: number;
-    parentsChurch: number;
+    unableToAttend?: number;
+    churchAttending?: number;
+    brideGroomChurch?: number;
+    parentsChurch?: number;
     rsvpCompletion: number;
-    brideGroomChurchLimit: number;
-    parentsChurchLimit: number;
-    totalChurchLimit: number;
+    brideGroomChurchLimit?: number;
+    parentsChurchLimit?: number;
+    totalChurchLimit?: number;
   };
   families: AdminFamily[];
 };
@@ -176,36 +180,8 @@ export default function AdminPage() {
                 value={data.totals.receptionAttending}
               />
               <SummaryCard
-                label="Church Guests"
-                value={`${data.totals.churchAttending} / ${data.totals.totalChurchLimit}`}
-              />
-              <SummaryCard
-                label="Seats Remaining"
-                value={
-                  data.totals.totalChurchLimit - data.totals.churchAttending
-                }
-              />
-
-              <SummaryCard
-                label="Bride/Groom Church"
-                value={`${data.totals.brideGroomChurch} / ${data.totals.brideGroomChurchLimit}`}
-              />
-              <SummaryCard
-                label="Bride/Groom Remaining"
-                value={
-                  data.totals.brideGroomChurchLimit -
-                  data.totals.brideGroomChurch
-                }
-              />
-              <SummaryCard
-                label="Parents Church"
-                value={`${data.totals.parentsChurch} / ${data.totals.parentsChurchLimit}`}
-              />
-              <SummaryCard
-                label="Parents Remaining"
-                value={
-                  data.totals.parentsChurchLimit - data.totals.parentsChurch
-                }
+                label="Unable To Attend"
+                value={data.totals.unableToAttend ?? 0}
               />
             </section>
 
@@ -234,10 +210,6 @@ export default function AdminPage() {
               {filteredFamilies.map((family) => {
                 const receptionCount = family.members.filter(
                   (member) => member.attendingWedding
-                ).length;
-
-                const churchCount = family.members.filter(
-                  (member) => member.attendingChurch
                 ).length;
 
                 return (
@@ -273,17 +245,26 @@ export default function AdminPage() {
                       </span>
                     </div>
 
-                    <div className="mb-4 grid gap-3 text-sm text-[#4d5f78] sm:grid-cols-5">
-                      <Info label="Email" value={family.contactEmail || "—"} />
-                      <Info label="Phone" value={family.contactPhone || "—"} />
+                    <div className="mb-4 grid gap-3 text-sm text-[#4d5f78] sm:grid-cols-4">
                       <Info
                         label="Submitted"
                         value={formatSubmittedAt(family.submittedAt)}
                       />
                       <Info label="Reception" value={String(receptionCount)} />
                       <Info
-                        label="Church"
-                        value={`${churchCount} / ${family.churchSeatLimit}`}
+                        label="Unable To Attend"
+                        value={String(
+                          family.members.filter((member) => member.unableToAttend)
+                            .length
+                        )}
+                      />
+                      <Info
+                        label="Guest Contacts"
+                        value={String(
+                          family.members.filter(
+                            (member) => member.contactEmail || member.contactPhone
+                          ).length
+                        )}
                       />
                     </div>
 
@@ -292,8 +273,10 @@ export default function AdminPage() {
                         <thead className="bg-[#f8efe2] text-xs uppercase tracking-[0.18em] text-[#9c8261]">
                           <tr>
                             <th className="px-4 py-3">Guest</th>
+                            <th className="px-4 py-3">Email</th>
+                            <th className="px-4 py-3">Phone</th>
                             <th className="px-4 py-3">Reception</th>
-                            <th className="px-4 py-3">Church</th>
+                            <th className="px-4 py-3">Unable</th>
                           </tr>
                         </thead>
 
@@ -307,10 +290,16 @@ export default function AdminPage() {
                                 {member.fullName}
                               </td>
                               <td className="px-4 py-3">
+                                {member.contactEmail || "—"}
+                              </td>
+                              <td className="px-4 py-3">
+                                {member.contactPhone || "—"}
+                              </td>
+                              <td className="px-4 py-3">
                                 {member.attendingWedding ? "Yes" : "No"}
                               </td>
                               <td className="px-4 py-3">
-                                {member.attendingChurch ? "Yes" : "No"}
+                                {member.unableToAttend ? "Yes" : "No"}
                               </td>
                             </tr>
                           ))}
@@ -420,10 +409,6 @@ function FamilyDetailDrawer({
     (member) => member.attendingWedding
   ).length;
 
-  const churchCount = family.members.filter(
-    (member) => member.attendingChurch
-  ).length;
-
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-[#243b5a]/20 backdrop-blur-xl">
       <button
@@ -475,12 +460,12 @@ function FamilyDetailDrawer({
             label="Submitted"
             value={formatSubmittedAt(family.submittedAt)}
           />
-          <Info label="Email" value={family.contactEmail || "—"} />
-          <Info label="Phone" value={family.contactPhone || "—"} />
           <Info label="Reception" value={String(receptionCount)} />
           <Info
-            label="Church"
-            value={`${churchCount} / ${family.churchSeatLimit}`}
+            label="Unable To Attend"
+            value={String(
+              family.members.filter((member) => member.unableToAttend).length
+            )}
           />
         </div>
 
@@ -496,14 +481,16 @@ function FamilyDetailDrawer({
                 {member.fullName}
               </h3>
 
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Info label="Email" value={member.contactEmail || "—"} />
+                <Info label="Phone" value={member.contactPhone || "—"} />
                 <Info
                   label="Reception"
                   value={member.attendingWedding ? "Yes" : "No"}
                 />
                 <Info
-                  label="Church"
-                  value={member.attendingChurch ? "Yes" : "No"}
+                  label="Unable To Attend"
+                  value={member.unableToAttend ? "Yes" : "No"}
                 />
                 <Info
                   label="Submitted"

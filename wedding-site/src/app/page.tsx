@@ -48,6 +48,7 @@ type FamilyMember = {
   churchEligible: boolean;
   contactEmail: string;
   contactPhone: string;
+  unableToAttend: boolean;
 };
 
 type RSVPFamily = {
@@ -1189,6 +1190,12 @@ function OrderOfDaySection() {
             All wedding communication will be sent and shared via email, SMS,
             and WhatsApp.
           </p>
+
+          <div className="mx-auto my-5 h-px w-44 bg-gradient-to-r from-transparent via-[#c9a76b] to-transparent" />
+
+          <p className="text-sm font-black uppercase tracking-[0.22em] text-[#9c6f2d]">
+            RSVP Deadline: {RSVP_DEADLINE}
+          </p>
         </motion.div>
 
         <RegistrySection />
@@ -1848,11 +1855,6 @@ function RSVPModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     (member) => member.attendingWedding
   ).length;
 
-  const attendingChurchCount = familyMembers.filter(
-    (member) => member.attendingChurch
-  ).length;
-
- const familyChurchLimit = familyMembers.length;
  
   function resetModal() {
     setStep("surname");
@@ -1887,6 +1889,7 @@ function applyFamilyResponse(data: any) {
         churchEligible: member.churchEligible !== false,
         contactEmail: member.contactEmail ?? "",
         contactPhone: member.contactPhone ?? "",
+        unableToAttend: Boolean(member.unableToAttend),
       }))
     );
 
@@ -1974,52 +1977,48 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
           ...member,
           attendingWedding: nextAttendingWedding,
           attendingChurch: nextAttendingWedding ? member.attendingChurch : false,
+          unableToAttend: nextAttendingWedding ? false : member.unableToAttend,
         };
       })
     );
   }
 
-  function toggleChurchAttendance(memberId: string) {
-    setFamilyMembers((current) => {
-      const currentChurchCount = current.filter(
-        (member) => member.attendingChurch
-      ).length;
-
-      return current.map((member) => {
+  function toggleUnableToAttend(memberId: string) {
+    setFamilyMembers((current) =>
+      current.map((member) => {
         if (member.id !== memberId) return member;
 
-        if (!member.churchEligible || !member.attendingWedding) return member;
-
-        if (!member.attendingChurch && currentChurchCount >= familyChurchLimit) {
-          setErrorMessage(
-            `This family has a church ceremony limit of ${familyChurchLimit} seat${
-              familyChurchLimit === 1 ? "" : "s"
-            }.`
-          );
-          return member;
-        }
-
-        setErrorMessage("");
+        const nextUnableToAttend = !member.unableToAttend;
 
         return {
           ...member,
-          attendingChurch: !member.attendingChurch,
+          unableToAttend: nextUnableToAttend,
+          attendingWedding: nextUnableToAttend ? false : member.attendingWedding,
+          attendingChurch: nextUnableToAttend ? false : member.attendingChurch,
         };
-      });
-    });
+      })
+    );
   }
 
-  async function handleFamilySubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  async function submitMemberRsvp(member: FamilyMember) {
     if (!family) {
       setErrorMessage("Family details are missing. Please search again.");
+      return;
+    }
+
+    if (!member.contactPhone.trim()) {
+      setErrorMessage(`Please enter a cellphone number for ${member.fullName}.`);
       return;
     }
 
     setErrorMessage("");
 
     try {
+      const memberPayload = {
+        ...member,
+        attendingChurch: false,
+      };
+
       const response = await fetch("/api/rsvp/submit", {
         method: "POST",
         headers: {
@@ -2027,7 +2026,7 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
         },
         body: JSON.stringify({
           familyId: family.id,
-          members: familyMembers,
+          members: [memberPayload],
         }),
       });
 
@@ -2038,6 +2037,31 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
           data.error ?? "Could not submit RSVP. Please try again."
         );
         return;
+      }
+
+      if (member.unableToAttend) {
+        const declinedResponse = await fetch("/api/rsvp/decline", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            familyId: family.id,
+            surname: family.surname,
+            guestGroup: family.guestGroup,
+            members: [memberPayload],
+          }),
+        });
+
+        const declinedData = await declinedResponse.json();
+
+        if (!declinedResponse.ok) {
+          setErrorMessage(
+            declinedData.error ??
+              "RSVP was saved, but we could not save the unable to attend response. Please try again."
+          );
+          return;
+        }
       }
 
       setStep("success");
@@ -2197,9 +2221,8 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
         )}
 
         {step === "family" && family && (
-          <motion.form
+          <motion.div
             key="family"
-            onSubmit={handleFamilySubmit}
             initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -16, filter: "blur(8px)" }}
@@ -2268,42 +2291,54 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <label className="flex cursor-pointer items-center gap-3 rounded-full border border-[#c9a76b]/35 bg-[#f8efe2]/80 px-4 py-2.5">
+                  <label
+                    className={`mb-2 flex cursor-pointer items-center gap-3 rounded-full border px-4 py-2.5 ${
+                      member.unableToAttend
+                        ? "border-[#b91c1c]/35 bg-[#fff1ed]"
+                        : "border-[#c9a76b]/35 bg-[#f8efe2]/80"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={member.unableToAttend}
+                      onChange={() => toggleUnableToAttend(member.id)}
+                      className="h-4 w-4 accent-[#b91c1c]"
+                    />
+
+                    <span className="text-sm font-bold text-[#4d5f78]">
+                      Regretfully unable to attend
+                    </span>
+                  </label>
+
+                  <div className="grid grid-cols-1 gap-2">
+                    <label
+                      className={`flex items-center gap-3 rounded-full border px-4 py-2.5 ${
+                        member.unableToAttend
+                          ? "cursor-not-allowed border-[#c9a76b]/20 bg-[#f8efe2]/35 opacity-45"
+                          : "cursor-pointer border-[#c9a76b]/35 bg-[#f8efe2]/80"
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={member.attendingWedding}
+                        disabled={member.unableToAttend}
                         onChange={() => toggleWeddingAttendance(member.id)}
                         className="h-4 w-4 accent-[#b88a3d]"
                       />
 
                       <span className="text-sm font-bold text-[#4d5f78]">
-                        Reception
-                      </span>
-                    </label>
-
-                    <label
-                      className={`flex items-center gap-3 rounded-full border px-4 py-2.5 ${
-                        member.churchEligible && member.attendingWedding
-                          ? "cursor-pointer border-[#c9a76b]/35 bg-[#f8efe2]/80"
-                          : "cursor-not-allowed border-[#c9a76b]/20 bg-[#f8efe2]/35 opacity-45"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={member.attendingChurch}
-                        disabled={
-                          !member.churchEligible || !member.attendingWedding
-                        }
-                        onChange={() => toggleChurchAttendance(member.id)}
-                        className="h-4 w-4 accent-[#b88a3d]"
-                      />
-
-                      <span className="text-sm font-bold text-[#4d5f78]">
-                        Church Ceremony
+                        Wedding Reception
                       </span>
                     </label>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => submitMemberRsvp(member)}
+                    className={`${playfair.className} mt-3 w-full rounded-full border border-[#c9a76b] bg-[#243b5a] px-5 py-3 text-[0.68rem] font-black uppercase tracking-[0.22em] text-[#fff8ed] shadow-[0_16px_45px_rgba(36,59,90,0.16)] transition hover:bg-[#314a6d]`}
+                  >
+                    Submit RSVP for {member.fullName.split(" ")[0]}
+                  </button>
                 </div>
               ))}
             </div>
@@ -2320,17 +2355,9 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
                 </span>
               </p>
 
-              <p className="text-sm leading-6 text-[#4d5f78]">
-                Church attendees:{" "}
-                <span className="font-black text-[#243b5a]">
-                  {attendingChurchCount}
-                </span>{" "}
-                / {familyChurchLimit}
-              </p>
-
               <p className="mt-2 text-[0.68rem] leading-5 text-[#6f7f96]">
-                Church seats are limited and are allocated according to your
-                invitation group.
+                Please submit each guest's RSVP individually after confirming
+                their contact details.
               </p>
             </div>
 
@@ -2344,15 +2371,7 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
               RSVP Deadline: {RSVP_DEADLINE}
             </p>
 
-            <motion.button
-              type="submit"
-              whileHover={{ scale: 1.04, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className={`${playfair.className} rounded-full border-2 border-[#c9a76b] bg-[#f8efe2] px-9 py-3.5 text-xs font-black uppercase tracking-[0.28em] text-[#b88a3d] shadow-[0_22px_70px_rgba(36,59,90,0.16)] sm:px-10 sm:py-4 sm:text-sm sm:tracking-[0.32em]`}
-            >
-              Submit RSVP
-            </motion.button>
-          </motion.form>
+          </motion.div>
         )}
 
         {step === "success" && (
@@ -2380,7 +2399,7 @@ async function handleSurnameSubmit(event: React.FormEvent<HTMLFormElement>) {
             </h2>
 
             <p className="text-lg text-[#4d5f78] sm:text-xl">
-              Thank you. We cannot wait to celebrate with you.
+              Thank you. Your RSVP has been received.
             </p>
           </motion.div>
         )}

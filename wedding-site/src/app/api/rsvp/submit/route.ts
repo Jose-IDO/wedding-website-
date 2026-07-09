@@ -2,19 +2,12 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
 
-const GROUP_LIMITS = {
-  "bride-groom": 50,
-  parents: 50,
-} as const;
-
-type GuestGroup = keyof typeof GROUP_LIMITS;
-
 type SubmittedMember = {
   id: string;
   attendingWedding?: boolean;
-  attendingChurch?: boolean;
   contactEmail?: string;
   contactPhone?: string;
+  unableToAttend?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -38,81 +31,52 @@ export async function POST(request: Request) {
       );
     }
 
-    const familyData = familyDoc.data();
-
-    const guestGroup = (familyData?.guestGroup ?? "bride-groom") as GuestGroup;
-
-    const existingMembersSnapshot = await familyRef.collection("members").get();
-    const familyChurchLimit = existingMembersSnapshot.size;
-    const previousFamilyChurchSeats = Number(familyData?.churchSeatsUsed ?? 0);
-
-    const newFamilyChurchSeats = members.filter((member: SubmittedMember) =>
-      Boolean(member.attendingChurch)
-    ).length;
-
-    if (newFamilyChurchSeats > familyChurchLimit) {
-      return NextResponse.json(
-        {
-          error: `This family has a church ceremony limit of ${familyChurchLimit} seat${
-            familyChurchLimit === 1 ? "" : "s"
-          }.`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const familiesSnapshot = await adminDb
-      .collection("families")
-      .where("guestGroup", "==", guestGroup)
-      .get();
-
-    const currentGroupChurchSeats = familiesSnapshot.docs.reduce(
-      (total, doc) => {
-        const data = doc.data();
-        return total + Number(data.churchSeatsUsed ?? 0);
-      },
-      0
-    );
-
-    const adjustedGroupChurchSeats =
-      currentGroupChurchSeats -
-      previousFamilyChurchSeats +
-      newFamilyChurchSeats;
-
-    const groupLimit = GROUP_LIMITS[guestGroup];
-
-    if (adjustedGroupChurchSeats > groupLimit) {
-      return NextResponse.json(
-        {
-          error: `Church ceremony seats for this invitation group are full. ${
-            guestGroup === "parents"
-              ? "Parents' guests"
-              : "Bride and groom guests"
-          } have a limit of ${groupLimit} seats.`,
-        },
-        { status: 400 }
-      );
-    }
-
     const batch = adminDb.batch();
+    const submittedAt = FieldValue.serverTimestamp();
 
     batch.update(familyRef, {
-      churchSeatsUsed: newFamilyChurchSeats,
       rsvpStatus: "submitted",
-      submittedAt: FieldValue.serverTimestamp(),
+      submittedAt,
     });
 
     for (const member of members as SubmittedMember[]) {
       const memberRef = familyRef.collection("members").doc(member.id);
+      const unableToAttend = Boolean(member.unableToAttend);
+      const attendingWedding = unableToAttend
+        ? false
+        : Boolean(member.attendingWedding);
 
       batch.update(memberRef, {
-        attendingWedding: Boolean(member.attendingWedding),
-        attendingChurch: Boolean(member.attendingChurch),
+        attendingWedding,
+        attendingChurch: false,
+        unableToAttend,
         contactEmail: member.contactEmail ?? "",
         contactPhone: member.contactPhone ?? "",
         rsvpStatus: "submitted",
-        submittedAt: FieldValue.serverTimestamp(),
+        submittedAt,
       });
+
+      const declineRef = adminDb
+        .collection("declinedRsvps")
+        .doc(`${familyId}-${member.id}`);
+
+      if (unableToAttend) {
+        batch.set(
+          declineRef,
+          {
+            familyId,
+            memberId: member.id,
+            fullName: "",
+            contactEmail: member.contactEmail ?? "",
+            contactPhone: member.contactPhone ?? "",
+            declined: true,
+            submittedAt,
+          },
+          { merge: true }
+        );
+      } else {
+        batch.delete(declineRef);
+      }
     }
 
     await batch.commit();

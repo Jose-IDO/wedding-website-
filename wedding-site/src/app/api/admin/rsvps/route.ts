@@ -10,6 +10,9 @@ type MemberData = {
   attendingWedding?: boolean;
   attendingChurch?: boolean;
   churchEligible?: boolean;
+  unableToAttend?: boolean;
+  contactEmail?: string;
+  contactPhone?: string;
   rsvpStatus?: string;
   submittedAt?: FirestoreTimestamp;
 };
@@ -48,8 +51,11 @@ export async function GET() {
             id: memberDoc.id,
             fullName: memberData.fullName ?? "",
             attendingWedding: Boolean(memberData.attendingWedding),
-            attendingChurch: Boolean(memberData.attendingChurch),
+            attendingChurch: false,
             churchEligible: memberData.churchEligible !== false,
+            unableToAttend: Boolean(memberData.unableToAttend),
+            contactEmail: memberData.contactEmail ?? "",
+            contactPhone: memberData.contactPhone ?? "",
             rsvpStatus: memberData.rsvpStatus ?? "pending",
             submittedAt: timestampToISOString(memberData.submittedAt),
           };
@@ -77,25 +83,32 @@ export async function GET() {
         const reception = family.members.filter(
           (member) => member.attendingWedding
         ).length;
-        const church = family.members.filter(
-          (member) => member.attendingChurch
+        const unableToAttend = family.members.filter(
+          (member) => member.unableToAttend
+        ).length;
+        const submittedGuests = family.members.filter(
+          (member) => member.rsvpStatus === "submitted"
+        ).length;
+        const missingPhones = family.members.filter(
+          (member) => member.rsvpStatus === "submitted" && !member.contactPhone
+        ).length;
+        const missingEmails = family.members.filter(
+          (member) => member.rsvpStatus === "submitted" && !member.contactEmail
         ).length;
 
         summary.totalFamilies += 1;
         summary.totalInvited += invited;
         summary.receptionAttending += reception;
-        summary.churchAttending += church;
+        summary.unableToAttend += unableToAttend;
+        summary.submittedGuests += submittedGuests;
+        summary.pendingGuests += invited - submittedGuests;
+        summary.missingPhones += missingPhones;
+        summary.missingEmails += missingEmails;
 
         if (family.rsvpStatus === "submitted") {
           summary.submittedFamilies += 1;
         } else {
           summary.pendingFamilies += 1;
-        }
-
-        if (family.guestGroup === "parents") {
-          summary.parentsChurch += church;
-        } else {
-          summary.brideGroomChurch += church;
         }
 
         return summary;
@@ -106,24 +119,23 @@ export async function GET() {
         pendingFamilies: 0,
         totalInvited: 0,
         receptionAttending: 0,
-        churchAttending: 0,
-        brideGroomChurch: 0,
-        parentsChurch: 0,
+        unableToAttend: 0,
+        submittedGuests: 0,
+        pendingGuests: 0,
+        missingPhones: 0,
+        missingEmails: 0,
       }
     );
 
     const rsvpCompletion =
-      totals.totalFamilies === 0
+      totals.totalInvited === 0
         ? 0
-        : Math.round((totals.submittedFamilies / totals.totalFamilies) * 100);
+        : Math.round((totals.submittedGuests / totals.totalInvited) * 100);
 
     return NextResponse.json({
       totals: {
         ...totals,
         rsvpCompletion,
-        brideGroomChurchLimit: 50,
-        parentsChurchLimit: 50,
-        totalChurchLimit: 100,
       },
       families,
     });
