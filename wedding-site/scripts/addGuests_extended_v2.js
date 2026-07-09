@@ -132,7 +132,9 @@ async function addGuests() {
 
   console.log("");
   console.log("All guests added successfully.");
+   console.log("All guests added successfully.");
 }
+
 
 addGuests().catch((err) => {
   console.error(err);
